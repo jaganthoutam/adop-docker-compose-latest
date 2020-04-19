@@ -7,9 +7,9 @@ docker network create $CUSTOM_NETWORK_NAME
 export DOCKER_NETWORK_SUBNET_CIDR="172.18.0.0/16"
 export INITIAL_ADMIN_PASSWORD_PLAIN=test1234
 export INITIAL_ADMIN_USER=adopadmin
-export PUBLIC_IP=172.31.35.165
-export TARGET_HOST=172.31.35.165
-export IP=172.31.35.165
+export PUBLIC_IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)
+export TARGET_HOST=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)
+export IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)
 
 source credentials.generate.sh
 source platform.secrets.sh
