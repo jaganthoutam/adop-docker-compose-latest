@@ -19,7 +19,7 @@ before_install:
  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
  - sudo apt-get update
  - sudo apt-key update
- - sudo apt-get install -qqy --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" docker-engine=${DOCKER_ENGINE_VERSION}\*
+ - sudo apt-get install install docker-ce
  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
  - chmod +x docker-compose
  - sudo mv docker-compose /usr/local/bin
