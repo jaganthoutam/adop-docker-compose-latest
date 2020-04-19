@@ -27,4 +27,5 @@ before_install:
  - docker-compose --version
 
 script:
-  - ifconfig
+  - chmod +X docker-compose.sh
+  - ./docker-compose.sh
