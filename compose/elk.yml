@@ -1,0 +1,36 @@
+# set CUSTOM_NETWORK_NAME to the name of the custom Docker network
+
+elasticsearch:
+  container_name: elasticsearch
+  restart: always
+  image: elastic/elasticsearch:6.2.4
+  net: ${CUSTOM_NETWORK_NAME}
+  command: elasticsearch
+  ports:
+    - "9200:9200"
+  volumes:
+    - elasticsearch_data:/usr/share/elasticsearch/data
+
+logstash:
+  container_name: logstash
+  restart: always
+  image: elastic/logstash:6.2.4
+  net: ${CUSTOM_NETWORK_NAME}
+  environment:
+    - "constraint:tier==public"
+    - LS_HEAP_SIZE=1024m
+  ports:
+    - "12201:12201/udp"
+    - "25826:25826/udp"
+    - "5000:5000/tcp"
+
+kibana:
+  container_name: kibana
+  restart: always
+  image: elastic/kibana:6.2.4
+  net: ${CUSTOM_NETWORK_NAME}
+  command: kibana
+  environment:
+    - ELASTICSEARCH_URL=http://elasticsearch:9200
+  ports:
+    - "5601:5601"

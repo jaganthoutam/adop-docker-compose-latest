@@ -1,0 +1,48 @@
+proxy:
+  volumes:
+    - nginx_config:/etc/nginx
+    - nginx_releasenote:/usr/share/nginx/html
+
+ldap:
+  volumes:
+    - ldap_db:/var/lib/ldap
+    - ldap_static:/etc/ldap
+
+gitlab-postgresql:
+  volumes:
+    - gitlab_postgresql_data:/var/lib/postgresql:rw
+
+gitlab:
+  volumes:
+    - gitlab_config:/etc/gitlab:rw
+    - gitlab_logs:/var/log/gitlab:rw
+    - gitlab_data:/var/opt/gitlab:rw
+
+gitlab-redis:
+  volumes:
+    - gitlab_redis_data:/data
+
+sonar-mysql:
+  volumes:
+    - sonar_mysql_data:/var/lib/mysql 
+
+sonar:
+  volumes:
+    - sonar_data:/opt/sonarqube/data
+    - sonar_extensions:/opt/sonarqube/extensions 
+    - sonar_logs:/opt/sonarqube/logs
+
+jenkins-slave:
+  volumes:
+    - jenkins_slave_home:/workspace
+    - /var/run/docker.sock:/var/run/docker.sock
+
+jenkins:
+  user: root 
+  volumes:
+    - jenkins_home:/var/jenkins_home 
+    - /var/run/docker.sock:/var/run/docker.sock
+
+nexus:
+  volumes:
+    - nexus_data:/nexus-data

@@ -1,0 +1,300 @@
+# set TARGET_HOST to dns/ip of proxy
+# set LOGSTASH_HOST to dns/ip of logstash host
+
+proxy:
+  container_name: proxy
+  restart: always
+  #image: accenture/adop-nginx:0.3.5
+  image: jaganthoutam/adop-nginx:latest
+  #build: ../images/docker-nginx/
+  net: ${CUSTOM_NETWORK_NAME}
+  ports:
+    - "80:80"
+    - "443:443"
+  environment:
+    - "constraint:tier==public"
+    - "LDAP_SERVER=${LDAP_SERVER}"
+    - "LDAP_USERNAME=${LDAP_ADMIN},${LDAP_FULL_DOMAIN}"
+    - "LDAP_PASSWORD=${LDAP_PWD}"
+    - "LDAP_USER_BASE_DN=${LDAP_USER_BASE_DN},${LDAP_FULL_DOMAIN}"
+    - "LDAP_GROUP_ATTRIBUTE=member"
+    - "LDAP_USER_ID_ATTRIBUTE=cn"
+    - "LDAP_USER_OBJECT_CLASS=inetOrgPerson"
+
+ldap:
+  container_name: ldap
+  restart: always
+  #build: ../images/docker-ldap/
+  image: accenture/adop-ldap:0.2.1
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "389"
+  ports:
+    - "389:389/tcp"
+  environment:
+    INITIAL_ADMIN_USER: ${INITIAL_ADMIN_USER}
+    INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+    JENKINS_PLATFORM_USERNAME: ${JENKINS_PLATFORM_USERNAME}
+    JENKINS_PASSWORD: ${JENKINS_PWD}
+    GITLAB_PLATFORM_USERNAME: ${GITLAB_PLATFORM_USERNAME}
+    GITLAB_PASSWORD: ${GITLAB_PWD}
+    SLAPD_PASSWORD: ${LDAP_PWD}
+    SLAPD_DOMAIN: ${LDAP_DOMAIN}
+    SLAPD_FULL_DOMAIN: ${LDAP_FULL_DOMAIN}
+
+gitlab-postgresql:
+  container_name: gitlab-postgresql
+  restart: always
+  image: postgres:9.6.9-alpine
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "5432"
+  environment:
+    POSTGRES_USER: ${GITLAB_POSTGRES_USER}
+    POSTGRES_PASSWORD: ${PASSWORD_POSTGRESQL}
+    POSTGRES_DB: ${GITLAB_POSTGRES_DB}
+
+gitlab:
+  container_name: gitlab
+  restart: always
+  image: jaganthoutam/adop-gitlab:latest
+  hostname: gitlab
+  links:
+    - gitlab-postgresql:postgresql
+    - gitlab-redis:redis
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "80"
+    - "22"
+  environment:
+    INITIAL_ADMIN_USER: ${INITIAL_ADMIN_USER}
+    INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD_PLAIN}
+    JENKINS_USER: ${GITLAB_JENKINS_USERNAME}
+    JENKINS_PASSWORD: ${PASSWORD_JENKINS}
+    GITLAB_OMNIBUS_CONFIG: |
+     external_url "${PROTO}://${TARGET_HOST}/gitlab"
+     postgresql['enable'] = false
+     gitlab_rails['db_username'] = "${GITLAB_POSTGRES_USER}"
+     gitlab_rails['db_password'] = "${PASSWORD_POSTGRESQL}"
+     gitlab_rails['db_host'] = "gitlab-postgresql"
+     gitlab_rails['db_port'] = "5432"
+     gitlab_rails['db_database'] = "${GITLAB_POSTGRES_DB}"
+     gitlab_rails['db_adapter'] = 'postgresql'
+     gitlab_rails['db_encoding'] = 'utf8'
+     gitlab_rails['monitoring_whitelist'] = ['127.0.0.0/8', "${DOCKER_NETWORK_SUBNET_CIDR}"]
+     # Redis Configuration
+     redis['enable'] = false
+     gitlab_rails['redis_host'] = 'gitlab-redis'
+     gitlab_rails['redis_port'] = '6379'
+     # LDAP Configuration
+     gitlab_rails['ldap_enabled'] = true
+     gitlab_rails['ldap_servers'] = YAML.load <<-'EOS'
+       main:
+         label: 'LDAP'
+         host: 'ldap'
+         port: 389
+         uid: 'uid'
+         method: 'plain'
+         bind_dn: '${LDAP_MANAGER_DN}'
+         password: '${LDAP_PWD}'
+         active_directory: true
+         allow_username_or_email_login: false
+         block_auto_created_users: false
+         base: '${LDAP_FULL_DOMAIN}'
+         signin_enabled: false
+     EOS
+
+gitlab-redis:
+  container_name: gitlab-redis
+  restart: always
+  image: redis:3.2.12-alpine
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "6379"
+
+sonar-mysql:
+  container_name: sonar-mysql
+  restart: always
+  image: mysql:5.6.25
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "3306"
+  environment:
+    MYSQL_ROOT_PASSWORD: ${PASSWORD_SQL}
+    MYSQL_USER: ${SONAR_MYSQL_USER}
+    MYSQL_PASSWORD: ${SONAR_MYSQL_PASSWORD}
+    MYSQL_DATABASE: ${SONAR_MYSQL_DATABASE}
+
+sonar:
+  container_name: sonar
+  restart: always
+  image: jaganthoutam/adop-sonar:latest
+  #image: accenture/adop-sonar:0.4.3
+  #build: ../images/docker-sonar/
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "9000"
+  environment:
+    - "dependency:container==sonar-mysql"
+    - "SONARQUBE_JDBC_USERNAME=${SONAR_MYSQL_USER}"
+    - "SONARQUBE_JDBC_PASSWORD=${SONAR_MYSQL_PASSWORD}"
+    - "LDAP_URL=ldap://${LDAP_SERVER}"
+    - "LDAP_BIND_DN=${LDAP_ADMIN},${LDAP_FULL_DOMAIN}"
+    - "LDAP_BIND_PASSWORD=${LDAP_PWD}"
+    - "LDAP_USER_BASE_DN=${LDAP_USER_BASE_DN},${LDAP_FULL_DOMAIN}"
+    - "LDAP_USER_REQUEST=(&(objectClass=inetOrgPerson)(uid={login}))"
+    - "LDAP_USER_REAL_NAME_ATTRIBUTE=displayName"
+    - "LDAP_USER_EMAIL_ATTRIBUTE=mail"
+    - "LDAP_GROUP_BASE_DN=${LDAP_GROUP_BASE_DN},${LDAP_FULL_DOMAIN}"
+    - "LDAP_GROUP_REQUEST=(&(objectClass=groupOfUniqueNames)(uniqueMember={dn}))"
+    - "LDAP_GROUP_ID_ATTRIBUTE=cn"
+    - "SONARQUBE_JDBC_URL=jdbc:mysql://sonar-mysql:3306/${SONAR_MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
+
+jenkins:
+  container_name: jenkins
+  restart: always
+  #image: accenture/adop-jenkins:0.3.6
+  image: jaganthoutam/adop-jenkins:latest
+  #build: ../images/docker-jenkins/
+  net: ${CUSTOM_NETWORK_NAME}
+  ports:
+    - "50000:50000/tcp"
+  expose:
+    - "8080"
+    - "50000"
+  privileged: true
+  environment:
+    JENKINS_OPTS: "--prefix=/jenkins"
+    ROOT_URL: "${PROTO}://${TARGET_HOST}/jenkins/"
+    LDAP_SERVER: "${LDAP_SERVER}"
+    LDAP_ROOTDN: "${LDAP_FULL_DOMAIN}"
+    LDAP_USER_SEARCH_BASE: "${LDAP_USER_BASE_DN}"
+    LDAP_USER_SEARCH: "${LDAP_USER_SEARCH}"
+    LDAP_GROUP_SEARCH_BASE: "${LDAP_GROUP_BASE_DN}"
+    LDAP_GROUP_SEARCH_FILTER: ""
+    LDAP_GROUP_MEMBERSHIP_FILTER: ""
+    LDAP_MANAGER_DN: "${LDAP_MANAGER_DN}"
+    LDAP_MANAGER_PASSWORD: ${LDAP_PWD}
+    LDAP_INHIBIT_INFER_ROOTDN: "false"
+    LDAP_DISABLE_MAIL_ADDRESS_RESOLVER: "false"
+    LDAP_DISPLAY_NAME_ATTRIBUTE_NAME: "displayName"
+    LDAP_MAIL_ADDRESS_ATTRIBUTE_NAME: "mail"
+    LDAP_GROUP_NAME_ADMIN: "${LDAP_GROUP_NAME_ADMIN}"
+    INITIAL_ADMIN_USER: ${INITIAL_ADMIN_USER}
+    INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD_PLAIN}
+    GITLAB_HOST: "gitlab"
+    GITLAB_USERNAME: ${GITLAB_JENKINS_USERNAME}
+    GITLAB_PASSWORD: ${PASSWORD_JENKINS}
+    SONAR_SERVER_URL: "http://sonar:9000/sonar/"
+    SONAR_ACCOUNT_LOGIN: ${SONAR_ACCOUNT_LOGIN}
+    SONAR_ACCOUNT_PASSWORD: ${PASSWORD_JENKINS}
+    SONAR_DB_URL: "jdbc:mysql://sonar-mysql:3306/sonar?useUnicode=true&amp;characterEncoding=utf8"
+    SONAR_DB_LOGIN: ${SONAR_DB_LOGIN}
+    SONAR_DB_PASSWORD: ${SONAR_DB_PASSWORD}
+    SONAR_PLUGIN_VERSION: ""
+    SONAR_ADDITIONAL_PROPS: ""
+    SONAR_RUNNER_VERSION: "2.9.0.670"
+    ANT_VERSION: "1.9.4"
+    MAVEN_VERSION: "3.0.5"
+    NODEJS_VERSION: "6.9.4"
+    NODEJS_GLOBAL_PACKAGES: "grunt-cli@~0.1.13 bower@~1.3.12 plato@~1.2.1"
+    NODEJS_PACKAGES_REFRESH_HOURS: "72"
+    GIT_GLOBAL_CONFIG_NAME: "ADOP Jenkins"
+    GROOVY_VERSION: "2.4.8"
+    GIT_GLOBAL_CONFIG_EMAIL: "jenkins@${LDAP_DOMAIN}"
+    DOCKER_CLIENT_CERT_PATH: ${DOCKER_CLIENT_CERT_PATH}
+    DOCKER_NETWORK_NAME: ${CUSTOM_NETWORK_NAME}
+    CARTRIDGE_SOURCES: ${CARTRIDGE_SOURCES}
+    ADOP_PLATFORM_MANAGEMENT_VERSION: "f922a490fbaf2856c4745a5185a3e6e9870f7944"
+
+jenkins-slave:
+  container_name: jenkins-slave
+  restart: always
+  image: jaganthoutam/adop-jenkins-slave:latest
+  net: ${CUSTOM_NETWORK_NAME}
+  privileged: true
+  environment:
+    MASTER: "http://jenkins:8080/jenkins"
+    SLAVE_LABELS: "aws ldap java8 docker"
+    SWARM_PASSWORD: ${PASSWORD_JENKINS}
+    SLAVE_EXECUTORS: ${SLAVE_EXECUTORS}
+    INITIAL_ADMIN_USER: ${INITIAL_ADMIN_USER}
+    INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD_PLAIN}
+
+selenium-hub:
+  container_name: selenium-hub
+  restart: always
+  image: selenium/hub:2.53.0
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "4444"
+
+selenium-node-chrome:
+  container_name: selenium-node-chrome
+  restart: always
+  image: selenium/node-chrome:2.53.0
+  net: ${CUSTOM_NETWORK_NAME}
+  environment:
+    SE_OPTS: "-nodeConfig /var/selenium-config/config-chrome.json"
+    REMOTE_HOST: "http://selenium-node-chrome:5555"
+    HUB_PORT_4444_TCP_ADDR: "selenium-hub"
+    HUB_PORT_4444_TCP_PORT: "4444"
+
+selenium-node-firefox:
+  container_name: selenium-node-firefox
+  restart: always
+  image: selenium/node-firefox:2.53.0
+  net: ${CUSTOM_NETWORK_NAME}
+  environment:
+    SE_OPTS: "-nodeConfig /var/selenium-config/config-firefox.json"
+    REMOTE_HOST: "http://selenium-node-firefox:5555"
+    HUB_PORT_4444_TCP_ADDR: "selenium-hub"
+    HUB_PORT_4444_TCP_PORT: "4444"
+
+nexus:
+  container_name: nexus
+  restart: always
+  image: jaganthoutam/adop-nexus:latest
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "8081"
+  environment:
+    NEXUS_BASE_URL: "${PROTO}://${TARGET_HOST}/nexus"
+    NEXUS_CONTEXT: "nexus"
+    NEXUS_ADMIN_PASSWORD: "${INITIAL_ADMIN_PASSWORD_PLAIN}"
+    LDAP_SEARCH_BASE: "${LDAP_FULL_DOMAIN}"
+    LDAP_ENABLED: "true"
+    LDAP_URL: "ldap"
+    LDAP_BIND_DN: "${LDAP_ADMIN},${LDAP_FULL_DOMAIN}"
+    LDAP_BIND_PASSWORD: "${LDAP_PWD}"
+    LDAP_USER_PASSWORD_ATTRIBUTE: "userPassword"
+    LDAP_USER_BASE_DN: "${LDAP_USER_BASE_DN}"
+    LDAP_GROUP_BASE_DN: "${LDAP_GROUP_BASE_DN}"
+
+ldap-ltb:
+  container_name: ldap-ltb
+  restart: always
+  image: accenture/adop-ldap-ltb:0.1.0
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "80"
+  environment:
+    LDAP_LTB_URL: "ldap://${LDAP_SERVER}"
+    LDAP_LTB_DN: "${LDAP_ADMIN},${LDAP_FULL_DOMAIN}"
+    LDAP_LTB_PWD: "${LDAP_PWD}"
+    LDAP_LTB_BS: "${LDAP_FULL_DOMAIN}"
+
+ldap-phpadmin:
+  container_name: ldap-phpadmin
+  restart: always
+  image: accenture/adop-ldap-phpadmin:0.1.0
+  net: ${CUSTOM_NETWORK_NAME}
+  expose:
+    - "80"
+  environment:
+    LDAP_SERVER_NAME: "LDAP"
+    LDAP_SERVER_HOST: "ldap"
+    LDAP_SERVER_PORT: "389"
+    LDAP_SERVER_BIND_ID: "${LDAP_ADMIN},${LDAP_FULL_DOMAIN}"
+    LDAP_SERVER_BASE_DN: "${LDAP_FULL_DOMAIN}"
+
