@@ -27,20 +27,4 @@ before_install:
  - docker-compose --version
 
 script:
- - ./adop
- # Output something every 5 minutes or Travis kills the job
- - while sleep 300; do echo "=====[ $SECONDS seconds still running ]====="; done &
- - ./adop compose init
- # Killing background sleep loop
- - kill %1
- - ./adop target set -t http://127.0.0.1 -u ${INITIAL_ADMIN_USER} -p ${INITIAL_ADMIN_PASSWORD_PLAIN}
- - sleep 30
- - ./adop workspace -w Travis create
- - ./adop project -p TestProject -w Travis create
- - ./adop compose down
- - docker-compose ${COMPOSE_FILES} build
- - docker-compose ${COMPOSE_FILES} -p adopdockercompose up -d
- - count=0; until docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null || (( count++ > 12 )); do echo "Waiting $count"; sleep 5; done
- - docker logs adopdockercompose_site_1
- - docker logs adopdockercompose_site_1 | grep "Server running..." &> /dev/null
- - curl -sL -w "%{http_code}\\n" "http://localhost/adop-docker-compose/" -o /dev/null | grep "200" &> /dev/null
+ - docker-compose up
