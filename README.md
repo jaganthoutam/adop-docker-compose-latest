@@ -32,3 +32,4 @@ source credentials.generate.sh      # Generate platform Secrets
 source platform.secrets.sh          # Source platform secrets
 source env.config.sh                # source env configs
 ```
+# Monitoring ?
