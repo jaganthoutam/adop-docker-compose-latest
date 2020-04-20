@@ -16,7 +16,7 @@
   
   https://raw.githubusercontent.com/jaganthoutam/adop-docker-compose-latest/master/docker-compose.sh
 
-  sh ``
+```bash
  export CUSTOM_NETWORK_NAME=swarm_attachable
 docker network create $CUSTOM_NETWORK_NAME
 export DOCKER_NETWORK_SUBNET_CIDR="172.18.0.0/16"      # Docker Net, this is to allow git lab to do health checks
@@ -29,4 +29,4 @@ export IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)
 source credentials.generate.sh
 source platform.secrets.sh
 source env.config.sh
-`` sh
+```
