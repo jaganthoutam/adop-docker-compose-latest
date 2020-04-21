@@ -16,7 +16,7 @@
 
 # Quickstart Instructions
 
-  * Preperation
+  * Preparation
   ```bash
    sudo curl  https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
    sudo yum makecache
