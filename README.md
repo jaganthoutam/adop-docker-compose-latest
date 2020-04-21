@@ -18,7 +18,7 @@
 
   * Preperation
   ```bash
-  sudo curl  https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+   sudo curl  https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
    sudo yum makecache
    sudo dnf -y install docker-ce --nobest
    sudo dnf -y install  git
@@ -30,7 +30,7 @@
   
   ```
   
-  * Docker compose up
+  * [Edit docker-compose.sh file](https://raw.githubusercontent.com/jaganthoutam/adop-docker-compose-latest/master/docker-compose.sh)
 
 
 ```bash
