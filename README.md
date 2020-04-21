@@ -15,8 +15,23 @@
     * LDAP
 
 # Quickstart Instructions
+
+  * Preperation
+  ```bash
+  sudo curl  https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+   sudo yum makecache
+   sudo dnf -y install docker-ce --nobest
+   sudo dnf -y install  git
+   sudo systemctl enable --now docker
+   sudo curl -L https://github.com/docker/compose/releases/download/1.7.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+   sudo chmod +x /usr/local/bin/docker-compose && ln -sv /usr/local/bin/docker-compose /usr/bin/docker-compose
+   sudo docker-compose --version
+   sudo docker --version
   
-  https://raw.githubusercontent.com/jaganthoutam/adop-docker-compose-latest/master/docker-compose.sh
+  ```
+  
+  * Docker compose up
+
 
 ```bash
 export CUSTOM_NETWORK_NAME=swarm_attachable
