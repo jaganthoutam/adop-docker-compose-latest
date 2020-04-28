@@ -37,8 +37,8 @@
 export CUSTOM_NETWORK_NAME=swarm_attachable
 docker network create $CUSTOM_NETWORK_NAME
 export DOCKER_NETWORK_SUBNET_CIDR="172.18.0.0/16"      # Docker Net, this is to allow git lab to do health checks
-export INITIAL_ADMIN_PASSWORD_PLAIN=test1234           # Initial Admin password 
-export INITIAL_ADMIN_USER=adopadmin
+export DOCKER_NETWORK_GW=$(docker network inspect $CUSTOM_NETWORK_NAME | grep Gateway | awk '{print $2}' | sed -e 's/^"//' -e 's/"//')   
+export INITIAL_ADMIN_USER=adopadmin   # Initial Admin password
 export PUBLIC_IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1) # Should be ur Publip IP, If internal use Local ip
 export TARGET_HOST=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1) # Internal IP
 export IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)  # Internal IP
