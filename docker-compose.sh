@@ -5,6 +5,7 @@ echo Script Name: "$0"
 export CUSTOM_NETWORK_NAME=swarm_attachable
 docker network create $CUSTOM_NETWORK_NAME
 export DOCKER_NETWORK_SUBNET_CIDR="172.18.0.0/16"
+export DOCKER_NETWORK_GW=$(docker network inspect $CUSTOM_NETWORK_NAME | grep Gateway | awk '{print $2}' | sed -e 's/^"//' -e 's/"//')
 export INITIAL_ADMIN_PASSWORD_PLAIN=test1234
 export INITIAL_ADMIN_USER=adopadmin
 export PUBLIC_IP=$(/sbin/ip -o -4 addr list ens4 | awk '{print $4}' | cut -d/ -f1)
