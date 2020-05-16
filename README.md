@@ -1,6 +1,32 @@
 [![Build Status](https://travis-ci.org/Accenture/adop-docker-compose.svg?branch=master)](https://travis-ci.org/Accenture/adop-docker-compose)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Accenture/ADOP)
 
+   * Firewalld Rules
+```bash
+systemctl restart firewalld
+systemctl enable firewalld
+firewall-cmd --permanent --zone=public --add-port=80/tcp
+firewall-cmd --permanent --zone=public --add-port=443/tcp
+firewall-cmd --zone=public --add-port=6443/tcp --permanent
+firewall-cmd --zone=public --add-port=2376/tcp --permanent
+firewall-cmd --zone=public --add-port=2377/tcp --permanent
+firewall-cmd --zone=public --add-port=2379/tcp --permanent
+firewall-cmd --zone=public --add-port=2380/tcp --permanent
+firewall-cmd --zone=public --add-port=4789/udp --permanent
+firewall-cmd --zone=public --add-port=7946/tcp --permanent
+firewall-cmd --zone=public --add-port=7946/udp --permanent
+firewall-cmd --zone=public --add-port=10250/tcp --permanent
+firewall-cmd --zone=public --add-port=8000-8001/tcp --permanent
+firewall-cmd --zone=public --add-port=8443-8444/tcp --permanent
+firewall-cmd --zone=public --add-port=1337/tcp --permanent
+firewall-cmd --zone=public --add-port=27017/tcp --permanent
+firewall-cmd --zone=public --add-masquerade --permanent
+firewall-cmd --permanent --zone=public --change-interface=docker0
+firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 4 -i docker0 -j ACCEPT
+firewall-cmd --reload
+systemctl restart firewalld
+systemctl restart docker
+```
 
 
 # The DevOps Platform: Overview
