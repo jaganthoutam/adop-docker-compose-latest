@@ -149,8 +149,8 @@ sonar-mysql             /entrypoint.sh mysqld            Up             3306/tcp
 
 #Access the ADOP
 
-http://ADOP_SERVER_IP
-user: adopadmin
-pass: CHANGEME   
+    http://ADOP_SERVER_IP
+    user: adopadmin
+    pass: CHANGEME   
 
 ![Image Home](https://github.com/jaganthoutam/adop-docker-compose-latest/blob/master/img/home.png)
