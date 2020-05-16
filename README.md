@@ -122,6 +122,10 @@ gitlab is up-to-date
 ```bash
 docker-compose ps
 
+
+OUTPUT:
+
+
         Name                       Command                  State                                Ports
 --------------------------------------------------------------------------------------------------------------------------------
 filebeat                /usr/local/bin/docker-entr ...   Up
