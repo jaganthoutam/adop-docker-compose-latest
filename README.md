@@ -5,8 +5,8 @@
 ```bash
 systemctl restart firewalld
 systemctl enable firewalld
-firewall-cmd --permanent --zone=public --add-port=80/tcp
-firewall-cmd --permanent --zone=public --add-port=443/tcp
+firewall-cmd --zone=public --add-port=80/tcp --permanent  
+firewall-cmd --zone=public  --add-port=443/tcp --permanent  
 firewall-cmd --zone=public --add-port=6443/tcp --permanent
 firewall-cmd --zone=public --add-port=2376/tcp --permanent
 firewall-cmd --zone=public --add-port=2377/tcp --permanent
